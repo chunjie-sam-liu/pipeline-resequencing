@@ -1,3 +1,4 @@
-# genome_resequencing_pipelin
-# hello world
-# example files are too large, i will remove them later
+# genome_resequencing_pipeline
+> reference data is too not to upload.
+The description of pipeline will be added later
+
