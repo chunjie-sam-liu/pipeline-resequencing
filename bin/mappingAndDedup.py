@@ -59,11 +59,11 @@ def mapping(fq1,fq2,indir,out,index,soft=soft,t=10):
 	re2 = indir + os.sep + fq2
 	sam = re.split(r'\_|\.',fq1)[0] + '.sam'
 	
-	readgroup = '\"@RG\tID:%s\tLB:%s\tSM:%s\tPL:ILLUMINA\"' %(sam, sam, sam)
+	readgroup = r'"@RG\tID:%s\tLB:%s\tSM:%s\tPL:ILLUMINA"' %(sam, sam, sam)
 	#Mapping with mem algorithm
 	cmd = soft + " mem -t " + str(t) + " -M -a " + index + " " + re1 + " " + re2 + ' -R ' + readgroup + ">" + out + os.sep + sam
-	
-	os.system(cmd)
+        print cmd
+	# os.system(cmd)
 	print "***************mapping done!!!***************"
 	return sam, out
 
@@ -79,7 +79,7 @@ def dedup(sam, out, sortsam=sortsam, mark=mark):
 	outdedup = out + os.sep + dedup
 	metrics = out + os.sep + "mark.metrics"
 	cmd = "java -Xmx50g -Djava.io.tmpdir=/tmp -jar " + mark + " INPUT=" + outbam + " OUTPUT=" + outdedup + " METRICS_FILE=" + metrics + "  MAX_RECORDS_IN_RAM=5000000 ASSUME_SORTED=true VALIDATION_STRINGENCY=LENIENT REMOVE_DUPLICATES=true CREATE_INDEX=true"
-	os.system(cmd)
+	# os.system(cmd)
 	print "***************Dedup done!!!*********************"
 	return dedup
 	

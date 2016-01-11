@@ -112,66 +112,42 @@ l
 ps xf
 l
 cd
-l
-cd ../
 ls
-ll
+vim mappingAndDedup.py
 l
-vim ls
-s
-l
-ps xf
+vim mappingAndDedup.py
+exit
 ls
-cd
-l
-mv callSV.sh.source callSV.sh
-l
-vim callSV.sh 
+cp callVariants.py callVariants_mod.py
 ls
-mv callCNV.sh.source callCNV.sh
-l
-cd ../
+cd /home/liucj/piplines/resequencing/genome_resequencing/example/Mapping
 ls
-vim callCNV.
-vim callCNV.sh 
-;s
-l
-cd ../
-l
-vim test.sh 
-gzexe test.sh 
-l
-les test.sh
-bash test.sh
-vim test.sh
-l
-mv test.sh~ test.sh
-l
 ls
-vim qualityQcontol.py
-l
-cd ../
-ls
-vim qualityQcontol.py
-l
-python bin/qualityQcontol.py -pe1 NA12878.hiseq.wgs_chr20_2mb.30xPE_1.fastq -pe2 NA12878.hiseq.wgs_chr20_2mb.30xPE_2.fastq -i $pwd/example
-cd ../
-ls
-rm qualityQcontol.pyc
-l
-cd ../
-ls
-chmod 777 qualityQcontol.pyc
-ls
-cd ../
-ls
-vim qualityQcontol.py
-l
-cd ../
+cd /home/liucj/piplines/resequencing/genome_resequencing/example/Mapping
+gvim
 ls
 exit
 ls
-l
+df -h
+ls
+cd ../example/
+ls
+cd ../example/
+ls
+mv callSV.sh.source callSV.sh
+ls
+mv callCNV.sh.source callCNV.sh
+ls
 cd ../
-l
+ls
+ipython 
+ls
+cd ../example/
+ls
+cd ../software/crest-20120209/
+ls
+mv recalibrate.py recalibrate.py.old
+mv recalibrate_mod.py recalibrate.py
+ls
 cd ../
+ls

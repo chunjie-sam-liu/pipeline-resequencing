@@ -10,9 +10,7 @@
 
 import os,sys
 import argparse
-import pysam
-import multiprocessing
-import time
+
 root = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 software=root + "/software"
 data = root + "/data"
@@ -50,80 +48,43 @@ def usage():
 	
 	return args
 
-def worker(sq,inbam,bam,out,index,soft,t,mill,kg,dbsnp):
-	sn = sq["SN"]
-	intervals = inbam + "." + sn + '.intervals'
-	#create interval
-	cmd = "java -Xmx50g -jar %s -T RealignerTargetCreator -R %s -o %s -I %s -known %s -known %s -nt %s -L %s " %(soft,index,intervals,inbam,mill,kg,t, sn)
-	os.system(cmd)
-	# time.sleep(2)
-	# print cmd
+def realignAndrecal(bam,indir,out,index=index,soft=soft,t=10,mill=mill,kg=kg,dbsnp=dbsnp):
 	
-	#realignment
-	realign = bam.rstrip('bam') + sn +'.realign.bam'
-	outrealign = out + os.sep + realign
-	cmd = "java -Xmx50g -jar %s -T IndelRealigner -R %s -I %s -targetIntervals %s -o %s -known %s -known %s --filter_bases_not_stored -L %s " %(soft,index,inbam,intervals,outrealign,mill,kg, sn)
+	intervals = out + os.sep + bam + '.intervals'
+	inbam = out + os.sep + bam
+	#CREATE INTERVAL
+	cmd = "java -Xmx50g -jar %s -T RealignerTargetCreator -R %s -o %s -I %s -known %s -known %s -nt %s " %(soft,index,intervals,inbam,mill,kg,t)
 	os.system(cmd)
-	# time.sleep(2)
+
+	#REALIGNMENT
+	realign = bam.rstrip('bam') + 'realign.bam'
+	outrealign = out + os.sep + realign
+	cmd = "java -Xmx50g -jar %s -T IndelRealigner -R %s -I %s -targetIntervals %s -o %s -known %s -known %s --filter_bases_not_stored " %(soft,index,inbam,intervals,outrealign,mill,kg)
 	# print cmd
+	os.system(cmd)
 	
 	#RECALIBRATION
 	recal = realign.rstrip("bam") + 'recal.bam'
 	grp = out+os.sep + recal + '.grp'
-	cmd="java -Xmx50g -Djava.io.tmpdir=/tmp -jar %s -T BaseRecalibrator -R %s -I %s -knownSites %s -knownSites %s -knownSites %s -rf BadCigar -o %s -nct %s -L %s " %(soft,index,outrealign,dbsnp,mill,kg,grp,t, sn)
-	# time.sleep(2)
+	
+	cmd="java -Xmx50g -Djava.io.tmpdir=/tmp -jar %s -T BaseRecalibrator -R %s -I %s -knownSites %s -knownSites %s -knownSites %s -rf BadCigar -o %s -nct %s " %(soft,index,outrealign,dbsnp,mill,kg,grp,t)
 	# print cmd
 	os.system(cmd)
-
+	
 	outrecal = out + os.sep + recal
-	cmd = "java -Xmx50g -Djava.io.tmpdir=/tmp -jar %s -T PrintReads -R %s -I %s -BQSR %s -o %s -nct %s -L %s " %(soft,index,outrealign,grp,outrecal,t,sn)
-	# time.sleep(2)
+	cmd = "java -Xmx50g -Djava.io.tmpdir=/tmp -jar %s -T PrintReads -R %s -I %s -BQSR %s -o %s -nct %s " %(soft,index,outrealign,grp,outrecal, t)
 	# print cmd
 	os.system(cmd)
 	
-	
-def realignAndrecal(bam,indir,out,index=index,soft=soft,t=10,mill=mill,kg=kg,dbsnp=dbsnp):
-	#multiprocessing
-	jobs = []
-	
-	# intervals = out + os.sep + bam + '.intervals'
-	inbam = out + os.sep + bam
-	samfile = pysam.AlignmentFile(inbam, 'rb')
-	
-	# print samfile.header["SQ"]
-	#multiprocessing by chromosome
-	for sq in samfile.header["SQ"]:
-		p = multiprocessing.Process(target = worker, args=(sq,inbam,bam,out,index,soft,t,mill,kg,dbsnp))
-		jobs.append(p)
-		p.start()
-	
-	for it in jobs:
-		it.join()
-	
-	snList = []
-	for sq in samfile.header["SQ"]:
-		recal = bam.rstrip('bam') + sq["SN"] + ".realign.recal.bam"
-		outrecal = out + os.sep + recal
-		snList.append(outrecal)
-	snListString = ' '.join(snList)
-	
-	recal = bam.rstrip("bam") + "realign.recal.bam"
-	outrecal = out + os.sep + recal
-	cmd = "samtools merge %s %s" %(outrecal, snListString)
-	os.system(cmd)
-	sbamidx=outrecal + ".bai"
-	bamidx=outrecal.rstrip("bam") + "bai"
-	cmd = "samtools index %s; mv %s %s" %(outrecal, sbamidx, bamidx)
-	os.system(cmd)
+	#ReduceReads is deprecated in 3.0+, ReduceReads is used for UG calling for low quality variants
+	# reduce = recal.rstrip('bam') + 'reduce.bam'
+	# outreduce = out + os.sep + reduce
+	# cmd = "java -Xmx50g -Djava.io.tmpdir=/tmp/ -jar %s -T ReduceReads -R %s -I %s -o %s" %(soft,index,outrecal,outreduce)
 	# print cmd
-	
-
+	os.system(cmd)
 	print "***************Mapping recalibration is done!!!************"
 	
 	return recal
-	
-	
-	
 	
 def main():
 	args = usage()

@@ -33,7 +33,6 @@ def usage():
 	parser.add_argument("-pe1", dest="pe1", type=str, help="""Required. Input read_pe1""",required=True)
 	parser.add_argument("-pe2", dest="pe2", type=str, help="""Required. Input reead_pe2""",required=True)
 	parser.add_argument("-o", dest="out", type=str, help="""Required. Specify output directory.Default is current directory""",default=os.getcwd())
-	parser.add_argument("-i", dest="indir", type=str, help="""Required. Specify input directory.Default is current directory""",default=os.getcwd())
 	parser.add_argument("-t", dest="nthreads", type=int, help="""Optional. Integer indicating the number of concurrent threads to launch. Default=10.""", default=10)
 	parser.add_argument("-s",dest="soft", help="""Specify the location of NGSQC software""", default=soft)
 	parser.add_argument('-v','--version',action='version', version='%(prog)s 1.0')
@@ -41,7 +40,7 @@ def usage():
 	
 	return args
 
-def run(fq1,fq2,indir,out,soft=soft,t=10):
+def run(fq1,fq2,out,soft=soft,t=10):
 	## IlluQC_PRLL get quality control
 	out = out + os.sep +"QualityControl"
 	
@@ -50,15 +49,13 @@ def run(fq1,fq2,indir,out,soft=soft,t=10):
 	except:
 		print "Directory %s already exists" % out
 	# print "perl %s -pe %s %s 2 A -c %s -l 70 -t 2 -o %s -z g" %(soft, fq1, fq2, t,out)
-	fq1 = indir + os.sep + fq1
-	fq2 = indir + os.sep + fq2
 	os.system("perl %s -pe %s %s 2 A -c %s -l 70 -t 2 -o %s -z g" %(soft, fq1, fq2, t,out))
 	print "******************Quality control done!!!*******************"
 
 def main():
 	
 	args = usage()	
-	run(args.pe1,args.pe2,args.indir,args.out,args.soft,args.nthreads)
+	run(args.pe1,args.pe2,args.out,args.soft,args.nthreads)
 	
 
 if __name__ == "__main__":
