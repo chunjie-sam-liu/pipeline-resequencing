@@ -73,7 +73,7 @@ def dedup(sam, out, sortsam=sortsam, mark=mark):
 	bam = sam + '.bam'
 	outbam = out + os.sep + bam
 	cmd = "java -Xmx50g -Djava.io.tmpdir=/tmp -jar " + sortsam + " SO=coordinate INPUT=" +  outsam + " OUTPUT=" + outbam + " VALIDATION_STRINGENCY=LENIENT CREATE_INDEX=true"
-	os.system(cmd)
+	# os.system(cmd)
 	#dedup
 	dedup = sam + '.dedup.bam'
 	outdedup = out + os.sep + dedup

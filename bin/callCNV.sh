@@ -41,38 +41,56 @@ function main(){
 	#Set CNVnator path
 	export PATH=${soft}/:${soft}/src/:$PATH
 
+	#make fifo file
+	tempFifoFile=$$.info
+	mkfifo $tempFifoFile
+	exec 6<>$tempFifoFile
+	rm -rf $tempFifoFile
+	
+	#ten threads
+	tempThreads=10
+	for (( i=0;i<tempThreads;i++ ))
+	do
+		echo 
+	done >&6	
+	
 	name=${recal}
 	for SN in `samtools view -H $indir/$recal | grep "@SQ" |cut -f 2`
 	do
+		read
+		{
 		SN=${SN#*:}
 		array=( ${name//\./ } )
 		newArray=(${array[@]:0:3} $SN ${array[@]:3})
 		recal=$(IFS="."; echo "${newArray[*]}")
 		# echo $recal
-		{
-			#cnvnator
-			test -L ${out}/${recal} || ln -s ${indir}/${recal} ${out}/${recal} 
-			#predict with CNV region
-			#Extract read mapping from bam/sam files
-			cnvnator -genome $index -root ${out}/${recal}.root -chrom $SN -tree ${out}/${recal}
+	
+		#cnvnator
+		test -L ${out}/${recal} || ln -s ${indir}/${recal} ${out}/${recal} 
+		#predict with CNV region
+		#Extract read mapping from bam/sam files
+		cnvnator -genome $index -root ${out}/${recal}.root -chrom $SN -tree ${out}/${recal}
 
-			#Generate a histogram
-			cnvnator -genome $index -root ${out}/${recal}.root -chrom $SN -his 1000
-			
-			#Calculate statistics
-			cnvnator -genome $index -root ${out}/${recal}.root  -chrom $SN -stat 1000
-			
-			#RD signal partition
-			cnvnator -genome $index -root ${out}/${recal}.root  -chrom $SN -partition 1000 -ngc
-			
-			#CNV calling
-			cnvnator -genome $index -root ${out}/${recal}.root  -chrom $SN -call 1000	-ngc > ${out}/${recal}.CNV.txt
-			
-			#Convert txt file to vcf file
-			cnvnator2VCF.pl ${out}/${recal}.CNV.txt > ${out}/${recal}.CNV.vcf
+		#Generate a histogram
+		cnvnator -genome $index -root ${out}/${recal}.root -chrom $SN -his 1000
+		
+		#Calculate statistics
+		cnvnator -genome $index -root ${out}/${recal}.root  -chrom $SN -stat 1000
+		
+		#RD signal partition
+		cnvnator -genome $index -root ${out}/${recal}.root  -chrom $SN -partition 1000 -ngc
+		
+		#CNV calling
+		cnvnator -genome $index -root ${out}/${recal}.root  -chrom $SN -call 1000	-ngc > ${out}/${recal}.CNV.txt
+		
+		#Convert txt file to vcf file
+		cnvnator2VCF.pl ${out}/${recal}.CNV.txt > ${out}/${recal}.CNV.vcf
+		echo >&6
 		}&
 		
-	done
+	done <&6
+	wait
+	exec 6>&-
 
 	echo "Copy number variation calling done!!!!"
 	

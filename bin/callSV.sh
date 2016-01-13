@@ -51,18 +51,32 @@ function main(){
 	#I put them together in crest path, and export the path so that running crest can find them from export path
 	export PATH=${soft}:$PATH
 	
+	#make fifo file
+	tempFifoFile=$$.info
+	mkfifo $tempFifoFile
+	exec 7<>$tempFifoFile
+	rm -rf $tempFifoFile
+
+	#ten threads
+	tempThreads=10
+	for (( i=0;i<tempThreads;i++ ))
+	do
+		echo 
+	done >&7	
+	
 	#You will get error "Sorry, the BLAT/iPCR server seems to be down..." if gfServer is off
 	#BLAT runs in a stand alone or a Client/Server mode, CREST use Client/Server mode
 	#So gfServer must be on, and when using gfClient, you need spycify the host and port the gfServer used
 	name=${recal}
 	for SN in `samtools view -H $indir/$recal | grep "@SQ" |cut -f 2`
 	do
+		read
+		{
 		SN=${SN#*:}
 		array=( ${name//\./ } )
 		newArray=(${array[@]:0:3} $SN ${array[@]:3})
 		recal=$(IFS="."; echo "${newArray[*]}")
 		# echo $recal
-		{
 		test -L "$out/$recal" || { ln -s $indir/$recal $out/$recal; }
 		test -L "$out/${recal}.bai" || ln -s  $indir/${recal%.bam}.bai $out/${recal}.bai
 		extractSClip.pl -i $out/$recal --ref_genome $index -o $out
@@ -72,9 +86,12 @@ function main(){
 		CREST.pl -f "${out}/${recal}.cover" -d "${out}/$recal" --ref_genome "$index" --2bitdir "$indexdir" -t "$index2bit" --blatserver localhost --blatport 6666 -o $out 
 		test -f "${out}/${recal}.predSV.txt" || { echo "${out}/${recal}.predSV.txt doesn't exist"; exit 1; }
 		bam2html.pl -d "${out}/${recal}" -i "${out}/${recal}.predSV.txt" --ref_genome "$index" -o "${out}/${recal}.predSV.html" 
+		echo >&7
 		}&
 		
-	done
+	done <&7
+	wait
+	exec 7>&-
 	
 
 	

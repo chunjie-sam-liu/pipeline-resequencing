@@ -54,7 +54,7 @@ def worker(sq,inbam,bam,out,index,soft,t,mill,kg,dbsnp):
 	sn = sq["SN"]
 	intervals = inbam + "." + sn + '.intervals'
 	#create interval
-	cmd = "java -Xmx50g -jar %s -T RealignerTargetCreator -R %s -o %s -I %s -known %s -known %s -nt %s -L %s " %(soft,index,intervals,inbam,mill,kg,t, sn)
+	cmd = "java -Xmx10g -jar %s -T RealignerTargetCreator -R %s -o %s -I %s -known %s -known %s -nt %s -L %s " %(soft,index,intervals,inbam,mill,kg,t, sn)
 	os.system(cmd)
 	# time.sleep(2)
 	# print cmd
@@ -62,7 +62,7 @@ def worker(sq,inbam,bam,out,index,soft,t,mill,kg,dbsnp):
 	#realignment
 	realign = bam.rstrip('bam') + sn +'.realign.bam'
 	outrealign = out + os.sep + realign
-	cmd = "java -Xmx50g -jar %s -T IndelRealigner -R %s -I %s -targetIntervals %s -o %s -known %s -known %s --filter_bases_not_stored -L %s " %(soft,index,inbam,intervals,outrealign,mill,kg, sn)
+	cmd = "java -Xmx10g -jar %s -T IndelRealigner -R %s -I %s -targetIntervals %s -o %s -known %s -known %s --filter_bases_not_stored -L %s " %(soft,index,inbam,intervals,outrealign,mill,kg, sn)
 	os.system(cmd)
 	# time.sleep(2)
 	# print cmd
@@ -70,13 +70,13 @@ def worker(sq,inbam,bam,out,index,soft,t,mill,kg,dbsnp):
 	#RECALIBRATION
 	recal = realign.rstrip("bam") + 'recal.bam'
 	grp = out+os.sep + recal + '.grp'
-	cmd="java -Xmx50g -Djava.io.tmpdir=/tmp -jar %s -T BaseRecalibrator -R %s -I %s -knownSites %s -knownSites %s -knownSites %s -rf BadCigar -o %s -nct %s -L %s " %(soft,index,outrealign,dbsnp,mill,kg,grp,t, sn)
+	cmd="java -Xmx10g -Djava.io.tmpdir=/tmp -jar %s -T BaseRecalibrator -R %s -I %s -knownSites %s -knownSites %s -knownSites %s -rf BadCigar -o %s -nct %s -L %s " %(soft,index,outrealign,dbsnp,mill,kg,grp,t, sn)
 	# time.sleep(2)
 	# print cmd
 	os.system(cmd)
 
 	outrecal = out + os.sep + recal
-	cmd = "java -Xmx50g -Djava.io.tmpdir=/tmp -jar %s -T PrintReads -R %s -I %s -BQSR %s -o %s -nct %s -L %s " %(soft,index,outrealign,grp,outrecal,t,sn)
+	cmd = "java -Xmx10g -Djava.io.tmpdir=/tmp -jar %s -T PrintReads -R %s -I %s -BQSR %s -o %s -nct %s -L %s " %(soft,index,outrealign,grp,outrecal,t,sn)
 	# time.sleep(2)
 	# print cmd
 	os.system(cmd)
@@ -92,13 +92,11 @@ def realignAndrecal(bam,indir,out,index=index,soft=soft,t=10,mill=mill,kg=kg,dbs
 	
 	# print samfile.header["SQ"]
 	#multiprocessing by chromosome
+	pool = multiprocessing.Pool(processes=10)
 	for sq in samfile.header["SQ"]:
-		p = multiprocessing.Process(target = worker, args=(sq,inbam,bam,out,index,soft,t,mill,kg,dbsnp))
-		jobs.append(p)
-		p.start()
-	
-	for it in jobs:
-		it.join()
+		pool.apply_async(worker,(sq,inbam,bam,out,index,soft,t,mill,kg,dbsnp,))
+	pool.close()
+	pool.join()
 	
 	snList = []
 	for sq in samfile.header["SQ"]:
